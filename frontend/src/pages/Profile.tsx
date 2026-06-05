@@ -318,8 +318,7 @@ export default function Profile() {
                       </div>
                       </div>
                     <div className="mb-3">
-                      <Input label={TEXT_MAP_ADDRESS_LABEL} {...addrForm.register("map_query")} placeholder={TEXT_MAP_ADDRESS_PLACEHOLDER} />
-                      <div className="mt-3">
+<div className="mt-3">
                         <MapPinPicker
                           latitude={addressLatitude}
                           longitude={addressLongitude}
@@ -358,5 +357,6 @@ export default function Profile() {
     </>
   );
 }
+
 
 

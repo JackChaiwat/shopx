@@ -551,13 +551,12 @@ export default function Checkout() {
                               <MapPin size={18} className="mt-0.5 shrink-0 text-primary-500" />
                               <div>
                                 <p className="font-semibold">Google Maps delivery pin</p>
-                                <p className="text-xs text-gray-500">Drag the map until the pin is on the delivery point, or use current location. This pin is used to calculate shipping.</p>
+                                <p className="text-xs text-gray-500">Drag the map until the pin is on the delivery point. This pin is used to calculate shipping.</p>
                               </div>
                             </div>
                             </div>
                           <div className="mb-3">
-                            <Input label={TEXT_MAP_ADDRESS_LABEL} {...register("map_query")} placeholder={TEXT_MAP_ADDRESS_PLACEHOLDER} />
-                            <div className="mt-3">
+<div className="mt-3">
                               <MapPinPicker
                                 latitude={latitude}
                                 longitude={longitude}
@@ -724,6 +723,7 @@ export default function Checkout() {
     </>
   );
 }
+
 
 
 

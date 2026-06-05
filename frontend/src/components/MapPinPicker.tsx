@@ -89,6 +89,17 @@ export default function MapPinPicker({
   };
 
 
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        onChange(position.coords.latitude.toFixed(7), position.coords.longitude.toFixed(7));
+      },
+      undefined,
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
   return (
     <div className="space-y-2">
       <div
@@ -138,8 +149,14 @@ export default function MapPinPicker({
           </span>
         </div>
       </div>
-      <p className="text-xs text-gray-500">The center pin is saved as this location.</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs text-gray-500">The center pin is saved as this location.</p>
+        <button type="button" onClick={useCurrentLocation} className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-primary-600 shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-950 dark:hover:bg-gray-900">
+          Current location
+        </button>
+      </div>
     </div>
   );
 }
+
 
