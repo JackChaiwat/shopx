@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+﻿import { useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
 import { User, Camera, MapPin, Plus } from "lucide-react";
@@ -39,7 +39,7 @@ interface AddressForm {
   latitude: string; longitude: string;
 }
 
-// ── ย้ายขึ้นมาก่อน export default เพื่อให้ TypeScript infer return type ถูกต้อง ──
+// â”€â”€ à¸¢à¹‰à¸²à¸¢à¸‚à¸¶à¹‰à¸™à¸¡à¸²à¸à¹ˆà¸­à¸™ export default à¹€à¸žà¸·à¹ˆà¸­à¹ƒà¸«à¹‰ TypeScript infer return type à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡ â”€â”€
 function ChangePasswordForm(): JSX.Element {
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<{ current: string; new: string; confirm: string }>();
   const [saving, setSaving] = useState(false);
@@ -316,10 +316,7 @@ export default function Profile() {
                           <p className="text-xs text-gray-500">Drag the map until the pin is on the delivery point. This pin is used to calculate shipping.</p>
                         </div>
                       </div>
-                      <button type="button" className="btn btn-secondary btn-sm whitespace-nowrap" onClick={useAddressCurrentLocation}>
-                        Current location
-                      </button>
-                    </div>
+                      </div>
                     <div className="mb-3">
                       <Input label={TEXT_MAP_ADDRESS_LABEL} {...addrForm.register("map_query")} placeholder={TEXT_MAP_ADDRESS_PLACEHOLDER} />
                       <div className="mt-3">
@@ -332,15 +329,8 @@ export default function Profile() {
                           }}
                         />
                       </div>
-                      <button type="button" className="btn btn-secondary btn-sm mt-2" onClick={useAddressMapTextForPin}>
-                        <MapPin size={15} /> Use coordinates from link
-                      </button>
+                      </div>
                     </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <Input label="Latitude" type="number" step="any" {...addrForm.register("latitude")} placeholder="13.7563000" readOnly />
-                      <Input label="Longitude" type="number" step="any" {...addrForm.register("longitude")} placeholder="100.5018000" readOnly />
-                    </div>
-                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <button type="button" onClick={() => setAddrModal(false)} className="btn btn-secondary">Cancel</button>
@@ -368,3 +358,5 @@ export default function Profile() {
     </>
   );
 }
+
+

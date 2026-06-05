@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useForm } from "react-hook-form";
@@ -75,7 +75,7 @@ interface SavedAddress {
   longitude?: string | null;
 }
 
-// ── QR Code payment modal ────────────────────────────────
+// â”€â”€ QR Code payment modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function PromptPayModal({
   qrUrl,
   amount,
@@ -108,7 +108,7 @@ function PromptPayModal({
         toast.success("Payment confirmed!");
         onConfirmed();
       } else {
-        toast("Payment not confirmed yet. Please scan and pay.", { icon: "⏳" });
+        toast("Payment not confirmed yet. Please scan and pay.", { icon: "â³" });
       }
     } catch {
       toast.error("Could not check payment status");
@@ -161,7 +161,7 @@ function PromptPayModal({
             disabled={checking}
             className="btn btn-primary w-full"
           >
-            {checking ? <Spinner className="w-4 h-4" /> : <><CheckCircle size={16} /> I've Paid — Check Status</>}
+            {checking ? <Spinner className="w-4 h-4" /> : <><CheckCircle size={16} /> I've Paid â€” Check Status</>}
           </button>
           <Link
             to={`/orders/${orderId}`}
@@ -179,7 +179,7 @@ function PromptPayModal({
   );
 }
 
-// ── Stripe card form ─────────────────────────────────────
+// â”€â”€ Stripe card form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function StripeModal({
   orderId,
   orderNumber,
@@ -218,7 +218,7 @@ function StripeModal({
   );
 }
 
-// ── Main Checkout ────────────────────────────────────────
+// â”€â”€ Main Checkout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function Checkout() {
   const { cart, fetchCart } = useCartStore();
   const { mutateAsync: checkout, isPending } = useCheckout();
@@ -514,7 +514,7 @@ export default function Checkout() {
                           </div>
                           {addressLabel === ADDRESS_LABEL_OTHER && (
                             <div className="mt-3">
-                              <Input label="à¸Šà¸·à¹ˆà¸­à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ" placeholder="à¹€à¸Šà¹ˆà¸™ à¸šà¹‰à¸²à¸™à¹à¸¡à¹ˆ / à¹‚à¸à¸”à¸±à¸‡ / à¸£à¹‰à¸²à¸™" {...register("address_label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
+                              <Input label="Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â­Ã Â¸Â¢Ã Â¸Â¹Ã Â¹Ë†" placeholder="Ã Â¹â‚¬Ã Â¸Å Ã Â¹Ë†Ã Â¸â„¢ Ã Â¸Å¡Ã Â¹â€°Ã Â¸Â²Ã Â¸â„¢Ã Â¹ÂÃ Â¸Â¡Ã Â¹Ë† / Ã Â¹â€šÃ Â¸ÂÃ Â¸â€Ã Â¸Â±Ã Â¸â€¡ / Ã Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â„¢" {...register("address_label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
                             </div>
                           )}
                         </div>
@@ -554,10 +554,7 @@ export default function Checkout() {
                                 <p className="text-xs text-gray-500">Drag the map until the pin is on the delivery point, or use current location. This pin is used to calculate shipping.</p>
                               </div>
                             </div>
-                            <button type="button" className="btn btn-secondary btn-sm whitespace-nowrap" onClick={useCurrentLocation}>
-                              Current location
-                            </button>
-                          </div>
+                            </div>
                           <div className="mb-3">
                             <Input label={TEXT_MAP_ADDRESS_LABEL} {...register("map_query")} placeholder={TEXT_MAP_ADDRESS_PLACEHOLDER} />
                             <div className="mt-3">
@@ -570,15 +567,8 @@ export default function Checkout() {
                                 }}
                               />
                             </div>
-                            <button type="button" className="btn btn-secondary btn-sm mt-2" onClick={useMapTextForPin}>
-                              <MapPin size={15} /> Use coordinates from link
-                      </button>
+                            </div>
                           </div>
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <Input label="Latitude" type="number" step="any" {...register("latitude")} placeholder="13.7563000" readOnly />
-                            <Input label="Longitude" type="number" step="any" {...register("longitude")} placeholder="100.5018000" readOnly />
-                          </div>
-                        </div>
                         <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 sm:col-span-2">
                           <input type="checkbox" {...register("save_as_default")} />
                           Save this as my default shipping address
@@ -598,7 +588,7 @@ export default function Checkout() {
                       value: "promptpay",
                       label: "PromptPay QR Code",
                       icon: <QrCode size={22} />,
-                      desc: "Scan with any Thai banking app — instant confirmation",
+                      desc: "Scan with any Thai banking app â€” instant confirmation",
                       badge: "Recommended",
                       badgeColor: "bg-green-100 text-green-700",
                     },
@@ -606,7 +596,7 @@ export default function Checkout() {
                       value: "stripe",
                       label: "Credit / Debit Card",
                       icon: <CreditCard size={22} />,
-                      desc: "Visa, Mastercard, JCB — secured by Stripe",
+                      desc: "Visa, Mastercard, JCB â€” secured by Stripe",
                       badge: null,
                       badgeColor: "",
                     },
@@ -614,7 +604,7 @@ export default function Checkout() {
                       value: "wallet",
                       label: "ShopX Wallet",
                       icon: <Wallet size={22} />,
-                      desc: "Use your wallet balance — instant",
+                      desc: "Use your wallet balance â€” instant",
                       badge: null,
                       badgeColor: "",
                     },
@@ -654,7 +644,7 @@ export default function Checkout() {
                   <div className="mt-3 bg-green-50 dark:bg-green-900/20 rounded-xl p-3 flex items-start gap-2">
                     <QrCode size={16} className="text-green-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-green-700 dark:text-green-400">
-                      A QR code will appear after you place your order. Open your banking app → PromptPay → Scan QR to pay.
+                      A QR code will appear after you place your order. Open your banking app â†’ PromptPay â†’ Scan QR to pay.
                     </p>
                   </div>
                 )}
@@ -675,7 +665,7 @@ export default function Checkout() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium line-clamp-1">{item.product_name}</p>
                       {item.variant_name && <p className="text-xs text-gray-400">{item.variant_name}</p>}
-                      <p className="text-xs text-gray-500">× {item.quantity}</p>
+                      <p className="text-xs text-gray-500">Ã— {item.quantity}</p>
                     </div>
                     <span className="text-xs font-medium shrink-0">{formatPrice(item.subtotal)}</span>
                   </div>
@@ -734,3 +724,6 @@ export default function Checkout() {
     </>
   );
 }
+
+
+
