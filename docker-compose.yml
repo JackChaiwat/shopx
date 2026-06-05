@@ -1,0 +1,351 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-backend-env: &backend-env
+  APP_ENV: ${APP_ENV:-production}
+  APP_SECRET_KEY: ${APP_SECRET_KEY}
+  DATABASE_URL: ${DATABASE_URL}
+  REDIS_URL: ${REDIS_URL}
+  JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+  JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+  JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+  JWT_REFRESH_TOKEN_EXPIRE_DAYS: ${JWT_REFRESH_TOKEN_EXPIRE_DAYS:-30}
+  MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+  MINIO_BUCKET_PRODUCTS: ${MINIO_BUCKET_PRODUCTS}
+  MINIO_BUCKET_AVATARS: ${MINIO_BUCKET_AVATARS}
+  MINIO_BUCKET_CHAT: ${MINIO_BUCKET_CHAT}
+  MINIO_USE_SSL: ${MINIO_USE_SSL:-false}
+  MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL}
+  SMTP_HOST: ${SMTP_HOST}
+  SMTP_PORT: ${SMTP_PORT:-587}
+  SMTP_USER: ${SMTP_USER}
+  SMTP_PASSWORD: ${SMTP_PASSWORD}
+  SMTP_FROM: ${SMTP_FROM}
+  SMTP_TLS: ${SMTP_TLS:-true}
+  STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+  STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+  OMISE_PUBLIC_KEY: ${OMISE_PUBLIC_KEY}
+  OMISE_SECRET_KEY: ${OMISE_SECRET_KEY}
+  OMISE_WEBHOOK_SECRET: ${OMISE_WEBHOOK_SECRET:-}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+  GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+  FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+  FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+  FACEBOOK_REDIRECT_URI: ${FACEBOOK_REDIRECT_URI}
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+  SENTRY_DSN: ${SENTRY_DSN:-}
+  PROMETHEUS_MULTIPROC_DIR: /tmp/prometheus_multiproc
+  BACKEND_WORKERS: ${BACKEND_WORKERS:-4}
+
+networks:
+  ecommerce-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+  loki-data:
+  celerybeat-data:
+
+services:
+  # ─────────────────────────────────────────
+  # PostgreSQL
+  # ─────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ecommerce}
+      POSTGRES_USER: ${POSTGRES_USER:-ecommerce_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ecommerce_user} -d ${POSTGRES_DB:-ecommerce}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────
+  # Redis
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    container_name: ecommerce-redis
+    restart: unless-stopped
+    logging: *default-logging
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --appendfsync everysec
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────
+  # MinIO (S3-compatible storage)
+  # ─────────────────────────────────────────
+  minio:
+    image: minio/minio:RELEASE.2024-01-16T16-07-38Z
+    container_name: ecommerce-minio
+    restart: unless-stopped
+    logging: *default-logging
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio-data:/data
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ─────────────────────────────────────────
+  # MinIO bucket initializer
+  # ─────────────────────────────────────────
+  minio-init:
+    image: minio/mc:RELEASE.2024-01-16T16-06-34Z
+    container_name: ecommerce-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      mc mb --ignore-existing local/${MINIO_BUCKET_PRODUCTS};
+      mc mb --ignore-existing local/${MINIO_BUCKET_AVATARS};
+      mc mb --ignore-existing local/${MINIO_BUCKET_CHAT};
+      mc anonymous set download local/${MINIO_BUCKET_PRODUCTS};
+      mc anonymous set download local/${MINIO_BUCKET_AVATARS};
+      exit 0;
+      "
+
+  # ─────────────────────────────────────────
+  # Backend API
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: ecommerce-backend
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      <<: *backend-env
+      
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./scripts:/app/scripts
+      - /tmp/prometheus_multiproc:/tmp/prometheus_multiproc
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    expose:
+      - "8000"
+
+  # ─────────────────────────────────────────
+  # Celery Worker
+  # ─────────────────────────────────────────
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: ecommerce-worker
+    restart: unless-stopped
+    logging: *default-logging
+    command: sh -c "python wait_for_db.py && celery -A app.workers.celery_app worker --loglevel=info --concurrency=4 -Q default,emails,notifications"
+    environment:
+      <<: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.workers.celery_app", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ─────────────────────────────────────────
+  # Celery Beat (scheduler)
+  # ─────────────────────────────────────────
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: ecommerce-beat
+    restart: unless-stopped
+    logging: *default-logging
+    command: sh -c "python wait_for_db.py && celery -A app.workers.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule"
+    environment:
+      <<: *backend-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ecommerce-net
+
+  # ─────────────────────────────────────────
+  # Frontend
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+        VITE_WS_BASE_URL: ${VITE_WS_BASE_URL:-/ws}
+        VITE_APP_NAME: ${VITE_APP_NAME:-ShopX}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY:-}
+        VITE_OMISE_PUBLIC_KEY: ${VITE_OMISE_PUBLIC_KEY:-}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN:-}
+    container_name: ecommerce-frontend
+    restart: unless-stopped
+    logging: *default-logging
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    expose:
+      - "80"
+
+  # ─────────────────────────────────────────
+  # Nginx reverse proxy
+  # ─────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ecommerce-nginx
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - ecommerce-net
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ─────────────────────────────────────────
+  # Prometheus
+  # ─────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.49.1
+    container_name: ecommerce-prometheus
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - ecommerce-net
+
+  # ─────────────────────────────────────────
+  # Grafana
+  # ─────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: ecommerce-grafana
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${APP_SECRET_KEY:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: http://localhost/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - ecommerce-net
+    depends_on:
+      - prometheus
+
+  # ─────────────────────────────────────────
+  # Loki (log aggregation)
+  # ─────────────────────────────────────────
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: ecommerce-loki
+    restart: unless-stopped
+    logging: *default-logging
+    command: -config.file=/etc/loki/loki.yml
+    volumes:
+      - ./monitoring/loki/loki.yml:/etc/loki/loki.yml:ro
+      - loki-data:/loki
+    networks:
+      - ecommerce-net

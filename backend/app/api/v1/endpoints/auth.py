@@ -1,0 +1,470 @@
+﻿from datetime import datetime, timezone
+from typing import Annotated, Optional
+
+import secrets
+import structlog
+from fastapi import APIRouter, BackgroundTasks, Depends, Request
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, EmailStr, field_validator
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api.v1.dependencies.auth import CurrentUser, DBSession
+from app.core.cache import (
+    rate_limit_check,
+    revoke_all_refresh_tokens,
+    revoke_refresh_token,
+    store_otp,
+    store_refresh_token,
+    verify_otp,
+    verify_refresh_token,
+)
+from app.core.exceptions import AppException, BadRequestException, ConflictException, UnauthorizedException
+from app.core.security import (
+    create_access_token,
+    create_email_verification_token,
+    create_password_reset_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_password,
+    verify_special_token,
+)
+from app.db.repositories.user_repository import UserRepository
+from app.models.models import User, UserRole, UserStatus
+from app.workers.tasks import send_email_task
+
+logger = structlog.get_logger(__name__)
+router = APIRouter()
+
+
+# â”€â”€ Schemas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class RegisterRequest(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if len(v.strip()) < 2:
+            raise ValueError("Full name must be at least 2 characters")
+        return v.strip()
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(ch.islower() for ch in v) or not any(ch.isupper() for ch in v) or not any(ch.isdigit() for ch in v):
+            raise ValueError("Password must include uppercase, lowercase, and a number")
+        return v
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class OAuthCallbackRequest(BaseModel):
+    code: str
+    redirect_uri: Optional[str] = None
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        return v
+
+
+def _user_response(user: User) -> dict:
+    return {
+        "id": str(user.id),
+        "email": user.email,
+        "full_name": user.full_name,
+        "avatar_url": user.avatar_url,
+        "role": user.role.value,
+        "status": user.status.value,
+        "is_email_verified": user.is_email_verified,
+    }
+
+
+def _token_response(user: User, access_token: str, refresh_token: str) -> dict:
+    return {
+        "success": True,
+        "data": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": _user_response(user),
+        },
+    }
+
+
+# â”€â”€ Endpoints â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+async def _send_verify_otp(user: User, background_tasks: BackgroundTasks) -> None:
+    allowed_minute = await rate_limit_check(f"otp_verify_minute:{user.email}", limit=1, window=60)
+    if not allowed_minute:
+        raise BadRequestException("Please wait before requesting another verification code")
+
+    allowed_window = await rate_limit_check(f"otp_verify_window:{user.email}", limit=5, window=900)
+    if not allowed_window:
+        raise BadRequestException("Too many verification code requests. Please try again later")
+
+    otp = _generate_otp()
+    await store_otp(f"verify:{user.email}", otp, ttl=600)
+    background_tasks.add_task(
+        send_email_task.delay,
+        to=user.email,
+        subject="Your ShopX verification code",
+        template="otp_verification",
+        context={
+            "name": user.full_name,
+            "otp": otp,
+            "expiry_minutes": 10,
+        },
+    )
+
+
+@router.post("/register", status_code=201)
+async def register(
+    body: RegisterRequest,
+    background_tasks: BackgroundTasks,
+    db: DBSession,
+):
+    repo = UserRepository(db)
+
+    existing = await repo.get_by_email(body.email)
+    if existing:
+        if existing.is_email_verified and existing.status == UserStatus.ACTIVE:
+            raise ConflictException("Email already registered. Please sign in")
+        await _send_verify_otp(existing, background_tasks)
+        return {
+            "success": True,
+            "message": "Account already exists. We sent a new verification code.",
+            "data": {"user": _user_response(existing)},
+        }
+
+    user = await repo.create(
+        email=body.email,
+        hashed_password=hash_password(body.password),
+        full_name=body.full_name,
+        role=UserRole.BUYER,
+        status=UserStatus.PENDING_VERIFICATION,
+        is_email_verified=False,
+    )
+
+    await _send_verify_otp(user, background_tasks)
+
+    logger.info("User registered", user_id=str(user.id), email=user.email)
+
+    return {
+        "success": True,
+        "message": "Account created. Please verify your email.",
+        "data": {"user": _user_response(user)},
+    }
+
+
+@router.post("/login")
+async def login(body: LoginRequest, background_tasks: BackgroundTasks, db: DBSession):
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+
+    if not user or not user.hashed_password:
+        raise UnauthorizedException("Invalid email or password")
+
+    if not verify_password(body.password, user.hashed_password):
+        raise UnauthorizedException("Invalid email or password")
+
+    if user.status == UserStatus.SUSPENDED:
+        raise UnauthorizedException("Account suspended")
+
+    if not user.is_email_verified or user.status == UserStatus.PENDING_VERIFICATION:
+        await _send_verify_otp(user, background_tasks)
+        logger.info("Login blocked pending email verification", user_id=str(user.id))
+        raise AppException(
+            status_code=403,
+            code="EMAIL_NOT_VERIFIED",
+            message="Please verify your email before signing in",
+            details={"email": user.email},
+        )
+
+    # Update last login
+    await repo.update(user, last_login_at=datetime.now(timezone.utc))
+
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+    await store_refresh_token(str(user.id), refresh_token)
+
+    logger.info("User logged in", user_id=str(user.id))
+    return _token_response(user, access_token, refresh_token)
+
+
+@router.post("/refresh")
+async def refresh_token(body: RefreshRequest, db: DBSession):
+    payload = decode_token(body.refresh_token)
+
+    if payload.get("type") != "refresh":
+        raise UnauthorizedException("Invalid token type")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise UnauthorizedException("Invalid token")
+
+    is_valid = await verify_refresh_token(user_id, body.refresh_token)
+    if not is_valid:
+        raise UnauthorizedException("Invalid or revoked refresh token")
+
+    repo = UserRepository(db)
+    user = await repo.get_by_id(user_id)  # type: ignore
+    if not user:
+        raise UnauthorizedException("User not found")
+
+    # Rotate refresh token
+    await revoke_refresh_token(user_id, body.refresh_token)
+    new_access = create_access_token({"sub": user_id})
+    new_refresh = create_refresh_token({"sub": user_id})
+    await store_refresh_token(user_id, new_refresh)
+
+    return {
+        "success": True,
+        "data": {
+            "access_token": new_access,
+            "refresh_token": new_refresh,
+            "token_type": "bearer",
+        },
+    }
+
+
+@router.post("/logout")
+async def logout(current_user: CurrentUser, body: RefreshRequest):
+    await revoke_refresh_token(str(current_user.id), body.refresh_token)
+    return {"success": True, "message": "Logged out successfully"}
+
+
+@router.post("/logout-all")
+async def logout_all_devices(current_user: CurrentUser):
+    await revoke_all_refresh_tokens(str(current_user.id))
+    return {"success": True, "message": "Logged out from all devices"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest, background_tasks: BackgroundTasks, db: DBSession):
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+
+    # Always return success to prevent email enumeration
+    if user and user.hashed_password:
+        token = create_password_reset_token(str(user.id))
+        background_tasks.add_task(
+            send_email_task.delay,
+            to=user.email,
+            subject="Reset your password",
+            template="password_reset",
+            context={"name": user.full_name, "token": token},
+        )
+
+    return {"success": True, "message": "If the email exists, a reset link has been sent"}
+
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordRequest, db: DBSession):
+    user_id = verify_special_token(body.token, "password_reset")
+    from uuid import UUID
+    repo = UserRepository(db)
+    user = await repo.get_by_id(UUID(user_id))
+    if not user:
+        raise BadRequestException("Invalid reset token")
+
+    await repo.update(user, hashed_password=hash_password(body.new_password))
+    await revoke_all_refresh_tokens(user_id)
+
+    return {"success": True, "message": "Password reset successfully"}
+
+
+@router.post("/verify-email")
+async def verify_email(body: VerifyEmailRequest, db: DBSession):
+    user_id = verify_special_token(body.token, "email_verify")
+    from uuid import UUID
+    repo = UserRepository(db)
+    user = await repo.get_by_id(UUID(user_id))
+    if not user:
+        raise BadRequestException("Invalid verification token")
+
+    await repo.activate(user)
+    return {"success": True, "message": "Email verified successfully"}
+
+
+@router.get("/me")
+async def get_me(current_user: CurrentUser):
+    return {"success": True, "data": _user_response(current_user)}
+
+
+@router.post("/change-password")
+async def change_password(body: ChangePasswordRequest, current_user: CurrentUser, db: DBSession):
+    if not current_user.hashed_password:
+        raise BadRequestException("No password set for OAuth account")
+
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise UnauthorizedException("Current password is incorrect")
+
+    repo = UserRepository(db)
+    await repo.update(current_user, hashed_password=hash_password(body.new_password))
+    await revoke_all_refresh_tokens(str(current_user.id))
+
+    return {"success": True, "message": "Password changed. Please log in again."}
+
+
+# â”€â”€ OTP Email Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class SendOTPRequest(BaseModel):
+    email: EmailStr
+
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+
+class ResetPasswordOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters")
+        if not any(ch.islower() for ch in v) or not any(ch.isupper() for ch in v) or not any(ch.isdigit() for ch in v):
+            raise ValueError("Password must include uppercase, lowercase, and a number")
+        return v
+
+
+def _generate_otp(length: int = 6) -> str:
+    return "".join(str(secrets.randbelow(10)) for _ in range(length))
+
+
+@router.post("/send-verify-otp")
+async def send_verify_otp(
+    body: SendOTPRequest,
+    background_tasks: BackgroundTasks,
+    db: DBSession,
+):
+    """Send 6-digit OTP to verify email address."""
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+    if not user:
+        return {"success": True, "message": "OTP sent if email exists"}
+
+    await _send_verify_otp(user, background_tasks)
+    return {"success": True, "message": "Verification code sent to your email"}
+
+
+@router.post("/verify-email-otp")
+async def verify_email_otp(body: VerifyOTPRequest, db: DBSession):
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+    if not user:
+        raise BadRequestException("Invalid email or OTP")
+
+    allowed_attempt = await rate_limit_check(f"otp_verify_attempt:{user.email}", limit=10, window=900)
+    if not allowed_attempt:
+        raise BadRequestException("Too many invalid OTP attempts. Please request a new code later")
+
+    is_valid = await verify_otp(f"verify:{user.email}", body.otp)
+    if not is_valid:
+        raise BadRequestException("Invalid or expired OTP code")
+
+    await repo.activate(user)
+
+    access_token = create_access_token({"sub": str(user.id)})
+    refresh_token = create_refresh_token({"sub": str(user.id)})
+    await store_refresh_token(str(user.id), refresh_token)
+
+    logger.info("Email verified via OTP", user_id=str(user.id))
+    return _token_response(user, access_token, refresh_token)
+
+@router.post("/send-reset-otp")
+async def send_reset_otp(
+    body: SendOTPRequest,
+    background_tasks: BackgroundTasks,
+    db: DBSession,
+):
+    """Send 6-digit OTP for password reset."""
+    reset_limit_key = f"reset_otp:{body.email.lower()}"
+    if not await rate_limit_check(reset_limit_key, limit=3, window=600):
+        return {"success": True, "message": "If the email exists, a reset code has been sent"}
+
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+
+    if user and user.hashed_password:
+        otp = _generate_otp()
+        await store_otp(f"reset:{user.email}", otp, ttl=600)  # 10 min
+
+        background_tasks.add_task(
+            send_email_task.delay,
+            to=user.email,
+            subject="Your ShopX password reset code",
+            template="otp_reset",
+            context={
+                "name": user.full_name,
+                "otp": otp,
+                "expiry_minutes": 10,
+            },
+        )
+        logger.info("Reset OTP sent", user_id=str(user.id))
+
+    return {"success": True, "message": "If the email exists, a reset code has been sent"}
+
+
+@router.post("/reset-password-otp")
+async def reset_password_otp(body: ResetPasswordOTPRequest, db: DBSession):
+    """Reset password using 6-digit OTP."""
+    repo = UserRepository(db)
+    user = await repo.get_by_email(body.email)
+    if not user:
+        raise BadRequestException("Invalid email or OTP")
+
+    is_valid = await verify_otp(f"reset:{user.email}", body.otp)
+    if not is_valid:
+        raise BadRequestException("Invalid or expired OTP code")
+
+    await repo.update(user, hashed_password=hash_password(body.new_password))
+    await revoke_all_refresh_tokens(str(user.id))
+
+    logger.info("Password reset via OTP", user_id=str(user.id))
+    return {"success": True, "message": "Password reset successfully. Please log in."}
+

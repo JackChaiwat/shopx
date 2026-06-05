@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff9800"/>
+      <stop offset="100%" stop-color="#f44336"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded rect -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Shopping bag -->
+  <path d="M20 26h24l-3 18H23L20 26z" fill="white" fill-opacity="0.95"/>
+  <!-- Bag handle -->
+  <path d="M26 26c0-3.3 2.7-6 6-6s6 2.7 6 6" fill="none" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+  <!-- Sparkle dot -->
+  <circle cx="32" cy="35" r="2.5" fill="#ff9800"/>
+</svg>

@@ -1,0 +1,262 @@
+﻿import { useState, useEffect, useRef } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
+import { Mail, CheckCircle, RefreshCw } from "lucide-react";
+import { useAuthStore } from "@/store/authStore";
+import { Spinner } from "@/components/ui";
+import api from "@/services/api";
+import toast from "react-hot-toast";
+
+// â”€â”€ 6-box OTP input (reusable pattern) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function OTPInput({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
+  const allowedKeys = new Set(["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"]);
+
+  const handleKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace") {
+      const next = digits.map((d, idx) => (idx === i ? "" : d)).join("").trimEnd();
+      onChange(next);
+      if (i > 0) inputs.current[i - 1]?.focus();
+      e.preventDefault();
+      return;
+    }
+
+    if (!allowedKeys.has(e.key) && !/^\d$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleChange = (i: number, v: string) => {
+    const digit = v.replace(/\D/g, "").slice(-1);
+    const next = digits.map((d, idx) => (idx === i ? digit : d)).join("").trimEnd();
+    onChange(next);
+    if (digit && i < 5) inputs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    onChange(pasted);
+    inputs.current[Math.min(pasted.length, 5)]?.focus();
+    e.preventDefault();
+  };
+
+  return (
+    <div className="flex gap-2 justify-center" onPaste={handlePaste}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <input
+          key={i}
+          ref={el => { inputs.current[i] = el; }}
+          type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={1}
+          autoComplete={i === 0 ? "one-time-code" : "off"}
+          autoCorrect="off"
+          spellCheck={false}
+          name={`shopx-otp-${i}`}
+          aria-label={`OTP digit ${i + 1}`}
+          disabled={disabled}
+          value={digits[i] || ""}
+          onChange={e => handleChange(i, e.target.value)}
+          onKeyDown={e => handleKey(i, e)}
+          className={`w-11 h-14 text-center text-xl font-bold border-2 rounded-xl outline-none transition-all
+            disabled:opacity-50 disabled:cursor-not-allowed
+            ${digits[i] ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20" : "border-gray-200 dark:border-gray-700"}
+            focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800`}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default function VerifyEmail() {
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const { user, loginWithTokens } = useAuthStore();
+  const emailFromUrl = params.get("email") || user?.email || "";
+  const initialOtpSent = params.get("sent") === "1";
+  const [otp, setOtp] = useState("");
+  const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [countdown, setCountdown] = useState(initialOtpSent ? 60 : 0);
+  const sentRef = useRef(initialOtpSent);
+  const verifyingRef = useRef(false);
+  const resendingRef = useRef(false);
+
+  useEffect(() => {
+    if (!emailFromUrl || !initialOtpSent) return;
+    toast.success("Verification code sent. Check your newest email.", { id: "verify-otp-initial-sent" });
+  }, [emailFromUrl, initialOtpSent]);
+  // Auto-send only when this page was opened directly.
+  // Login/register already send a code before redirecting here.
+  useEffect(() => {
+    if (!emailFromUrl || sentRef.current) return;
+    sendOTP({ showError: true });
+  }, [emailFromUrl]);
+
+  // Countdown
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
+
+  // Auto-submit when all 6 digits filled
+  useEffect(() => {
+    if (otp.length === 6 && !submitting && !done && !verifyingRef.current) verifyOTP();
+  }, [otp, submitting, done]);
+
+  const sendOTP = async ({ showError = false }: { showError?: boolean } = {}) => {
+    if (!emailFromUrl || sentRef.current) return false;
+    sentRef.current = true;
+    try {
+      await api.post("/auth/send-verify-otp", { email: emailFromUrl });
+      setCountdown(60);
+      return true;
+    } catch {
+      sentRef.current = false;
+      if (showError) toast.error("Could not send OTP. Please try again.", { id: "verify-otp-send-error" });
+      return false;
+    }
+  };
+
+  // const verifyOTP = async () => {
+  //   if (otp.length !== 6 || verifyingRef.current) return;
+  //   verifyingRef.current = true;
+  //   setSubmitting(true);
+  //   try {
+  //     const res = await api.post("/auth/verify-email-otp", { email: emailFromUrl, otp });
+  //     const { access_token, refresh_token, user } = res.data.data;
+
+    
+  //     localStorage.setItem("access_token", access_token);
+  //     localStorage.setItem("refresh_token", refresh_token);
+  //     localStorage.setItem("user", JSON.stringify(user));
+  //     useAuthStore.getState().setUser(user); 
+
+  //     setDone(true);
+  //     toast.success("Email verified!", { id: "email-verified" });
+  //     setTimeout(() => navigate("/", { replace: true }), 2000); 
+  //   } catch (e: any) {
+  //     const msg = e?.response?.data?.error?.message || "Invalid code";
+  //     toast.error(msg, { id: "verify-otp-error" });
+  //     setOtp("");
+  //   } finally {
+  //     verifyingRef.current = false;
+  //     setSubmitting(false);
+  //   }
+  // };
+
+  const verifyOTP = async () => {
+    if (otp.length !== 6 || verifyingRef.current) return;
+    verifyingRef.current = true;
+    setSubmitting(true);
+    try {
+      const res = await api.post("/auth/verify-email-otp", { email: emailFromUrl, otp });
+      const { access_token, refresh_token, user } = res.data.data;
+      loginWithTokens(access_token, refresh_token, user);
+      setDone(true);
+      toast.success("Email verified!", { id: "email-verified" });
+      setTimeout(() => navigate("/", { replace: true }), 2000);
+    } catch (e: any) {
+      const msg = e?.response?.data?.error?.message || "Invalid code";
+      toast.error(msg, { id: "verify-otp-error" });
+      setOtp("");
+    } finally {
+      verifyingRef.current = false;
+      setSubmitting(false);
+    }
+  };
+
+  const resendOTP = async () => {
+    if (resendingRef.current || countdown > 0) return;
+    resendingRef.current = true;
+    sentRef.current = false;
+    setResending(true);
+    try {
+      const sent = await sendOTP({ showError: false });
+      if (sent) {
+        toast.success("New code sent!", { id: "verify-otp-resend-success" });
+        setOtp("");
+      }
+    } catch {
+      toast.error("Could not resend. Try again.", { id: "verify-otp-resend-error" });
+    } finally {
+      resendingRef.current = false;
+      setResending(false);
+    }
+  };
+
+  return (
+    <>
+      <Helmet><title>Verify Email - ShopX</title></Helmet>
+      <div className="min-h-[80vh] flex items-center justify-center px-4">
+        <div className="card p-8 w-full max-w-md">
+
+          {done ? (
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce-once">
+                <CheckCircle size={32} className="text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold mb-2">Email Verified!</h2>
+              <p className="text-gray-500 text-sm mb-4">Your account is now fully activated. Redirecting...</p>
+              <Link to="/" className="btn btn-primary w-full">Go to Homepage</Link>
+            </div>
+          ) : (
+            <>
+              <div className="text-center mb-8">
+                <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Mail size={26} className="text-blue-600" />
+                </div>
+                <h1 className="text-2xl font-bold">Verify your email</h1>
+                <p className="text-gray-500 text-sm mt-1">
+                  Enter the 6-digit code sent to
+                </p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200 mt-0.5">{emailFromUrl}</p>
+              </div>
+
+              <div className="space-y-6">
+                <OTPInput value={otp} onChange={setOtp} disabled={submitting} />
+
+                {submitting && (
+                  <div className="flex items-center justify-center gap-2 text-primary-600">
+                    <Spinner className="w-4 h-4" />
+                    <span className="text-sm">Verifying...</span>
+                  </div>
+                )}
+
+                <button
+                  onClick={verifyOTP}
+                  disabled={otp.length !== 6 || submitting}
+                  className="btn btn-primary w-full btn-lg"
+                >
+                  {submitting ? <Spinner className="w-5 h-5" /> : "Verify Email"}
+                </button>
+              </div>
+
+              <div className="text-center mt-5 space-y-3">
+                <p className="text-xs text-gray-400">Code expires in 10 minutes</p>
+                {countdown > 0 ? (
+                  <p className="text-sm text-gray-400">Resend code in <span className="font-medium text-gray-600">{countdown}s</span></p>
+                ) : (
+                  <button onClick={resendOTP} disabled={resending}
+                    className="text-sm text-primary-600 hover:underline flex items-center justify-center gap-1 mx-auto">
+                    <RefreshCw size={12} />
+                    {resending ? "Sending..." : "Resend code"}
+                  </button>
+                )}
+
+                <p className="text-xs text-gray-400">
+                  Check your spam folder if you don't see it
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
