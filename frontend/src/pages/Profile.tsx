@@ -49,6 +49,36 @@ interface AddressForm {
   longitude: string;
 }
 
+const PASSWORD_TEXT = {
+  changeTitle: "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19",
+  changeHelp: "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e14\u0e49\u0e27\u0e22\u0e23\u0e2b\u0e31\u0e2a OTP \u0e17\u0e32\u0e07\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e01\u0e48\u0e2d\u0e19\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e43\u0e2b\u0e21\u0e48",
+  min8: "\u0e2d\u0e22\u0e48\u0e32\u0e07\u0e19\u0e49\u0e2d\u0e22 8 \u0e15\u0e31\u0e27\u0e2d\u0e31\u0e01\u0e29\u0e23",
+  upper: "\u0e21\u0e35\u0e15\u0e31\u0e27\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e43\u0e2b\u0e0d\u0e48",
+  lower: "\u0e21\u0e35\u0e15\u0e31\u0e27\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e40\u0e25\u0e47\u0e01",
+  number: "\u0e21\u0e35\u0e15\u0e31\u0e27\u0e40\u0e25\u0e02",
+  sent: "\u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e44\u0e1b\u0e17\u0e35\u0e48\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e41\u0e25\u0e49\u0e27",
+  sendFail: "\u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08",
+  needCode: "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e02\u0e2d\u0e23\u0e2b\u0e31\u0e2a\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e01\u0e48\u0e2d\u0e19",
+  changed: "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e41\u0e25\u0e49\u0e27 \u0e01\u0e23\u0e38\u0e13\u0e32\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e23\u0e30\u0e1a\u0e1a\u0e43\u0e2b\u0e21\u0e48",
+  changeFail: "\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e44\u0e21\u0e48\u0e2a\u0e33\u0e40\u0e23\u0e47\u0e08",
+  current: "\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e1b\u0e31\u0e08\u0e08\u0e38\u0e1a\u0e31\u0e19",
+  currentReq: "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e01\u0e23\u0e2d\u0e01\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e1b\u0e31\u0e08\u0e08\u0e38\u0e1a\u0e31\u0e19",
+  newPw: "\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e43\u0e2b\u0e21\u0e48",
+  newReq: "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e01\u0e23\u0e2d\u0e01\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e43\u0e2b\u0e21\u0e48",
+  strongReq: "\u0e15\u0e49\u0e2d\u0e07\u0e21\u0e35\u0e15\u0e31\u0e27\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e43\u0e2b\u0e0d\u0e48 \u0e15\u0e31\u0e27\u0e1e\u0e34\u0e21\u0e1e\u0e4c\u0e40\u0e25\u0e47\u0e01 \u0e41\u0e25\u0e30\u0e15\u0e31\u0e27\u0e40\u0e25\u0e02",
+  confirm: "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e43\u0e2b\u0e21\u0e48",
+  notMatch: "\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19\u0e44\u0e21\u0e48\u0e15\u0e23\u0e07\u0e01\u0e31\u0e19",
+  verifyTitle: "\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19\u0e01\u0e32\u0e23\u0e40\u0e1b\u0e25\u0e35\u0e48\u0e22\u0e19\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19",
+  verifyHelp: "\u0e23\u0e30\u0e1a\u0e1a\u0e08\u0e30\u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a 6 \u0e2b\u0e25\u0e31\u0e01\u0e44\u0e1b\u0e17\u0e35\u0e48\u0e2d\u0e35\u0e40\u0e21\u0e25\u0e1a\u0e31\u0e0d\u0e0a\u0e35\u0e02\u0e2d\u0e07\u0e04\u0e38\u0e13 \u0e23\u0e2b\u0e31\u0e2a\u0e2b\u0e21\u0e14\u0e2d\u0e32\u0e22\u0e38\u0e43\u0e19 10 \u0e19\u0e32\u0e17\u0e35",
+  resend: "\u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a\u0e2d\u0e35\u0e01\u0e04\u0e23\u0e31\u0e49\u0e07",
+  sendCode: "\u0e2a\u0e48\u0e07\u0e23\u0e2b\u0e31\u0e2a\u0e22\u0e37\u0e19\u0e22\u0e31\u0e19",
+  otpLabel: "\u0e23\u0e2b\u0e31\u0e2a OTP 6 \u0e2b\u0e25\u0e31\u0e01",
+  otpPlaceholder: "\u0e01\u0e23\u0e2d\u0e01\u0e23\u0e2b\u0e31\u0e2a\u0e08\u0e32\u0e01\u0e2d\u0e35\u0e40\u0e21\u0e25",
+  otpReq: "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e01\u0e23\u0e2d\u0e01\u0e23\u0e2b\u0e31\u0e2a OTP",
+  otpPattern: "\u0e01\u0e23\u0e38\u0e13\u0e32\u0e01\u0e23\u0e2d\u0e01\u0e23\u0e2b\u0e31\u0e2a 6 \u0e2b\u0e25\u0e31\u0e01",
+  save: "\u0e1a\u0e31\u0e19\u0e17\u0e36\u0e01\u0e23\u0e2b\u0e31\u0e2a\u0e1c\u0e48\u0e32\u0e19",
+} as const;
+
 function ChangePasswordForm(): JSX.Element {
   const {
     register,
@@ -66,10 +96,10 @@ function ChangePasswordForm(): JSX.Element {
 
   const newPassword = watch("new") || "";
   const passwordChecks = [
-    { label: "à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£", pass: newPassword.length >= 8 },
-    { label: "à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹ƒà¸«à¸à¹ˆ", pass: /[A-Z]/.test(newPassword) },
-    { label: "à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹€à¸¥à¹‡à¸", pass: /[a-z]/.test(newPassword) },
-    { label: "à¸¡à¸µà¸•à¸±à¸§à¹€à¸¥à¸‚", pass: /\d/.test(newPassword) },
+    { label: PASSWORD_TEXT.min8, pass: newPassword.length >= 8 },
+    { label: PASSWORD_TEXT.upper, pass: /[A-Z]/.test(newPassword) },
+    { label: PASSWORD_TEXT.lower, pass: /[a-z]/.test(newPassword) },
+    { label: PASSWORD_TEXT.number, pass: /\d/.test(newPassword) },
   ];
 
   const requestCode = async () => {
@@ -80,9 +110,9 @@ function ChangePasswordForm(): JSX.Element {
     try {
       await api.post("/auth/send-change-password-otp", { current_password: getValues("current") });
       setCodeSent(true);
-      toast.success("à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¹„à¸›à¸—à¸µà¹ˆà¸­à¸µà¹€à¸¡à¸¥à¹à¸¥à¹‰à¸§");
+      toast.success(PASSWORD_TEXT.sent);
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error(err?.response?.data?.error?.message || PASSWORD_TEXT.sendFail);
     } finally {
       setSendingCode(false);
     }
@@ -90,7 +120,7 @@ function ChangePasswordForm(): JSX.Element {
 
   const onSubmit = async (data: { current: string; new: string; otp: string }) => {
     if (!codeSent) {
-      toast.error("à¸à¸£à¸¸à¸“à¸²à¸‚à¸­à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¹ˆà¸­à¸™");
+      toast.error(PASSWORD_TEXT.needCode);
       return;
     }
 
@@ -101,12 +131,12 @@ function ChangePasswordForm(): JSX.Element {
         new_password: data.new,
         otp: data.otp,
       });
-      toast.success("à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹à¸¥à¹‰à¸§ à¸à¸£à¸¸à¸“à¸²à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸šà¹ƒà¸«à¸¡à¹ˆ");
+      toast.success(PASSWORD_TEXT.changed);
       reset();
       setCodeSent(false);
-      logout();
+      await logout();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || "à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error(err?.response?.data?.error?.message || PASSWORD_TEXT.changeFail);
     } finally {
       setSaving(false);
     }
@@ -119,22 +149,22 @@ function ChangePasswordForm(): JSX.Element {
           <Lock size={20} />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-950 dark:text-white">à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™</h3>
-          <p className="text-sm text-gray-500 dark:text-slate-400">à¸¢à¸·à¸™à¸¢à¸±à¸™à¸”à¹‰à¸§à¸¢à¸£à¸«à¸±à¸ª OTP à¸—à¸²à¸‡à¸­à¸µà¹€à¸¡à¸¥à¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ</p>
+          <h3 className="font-semibold text-gray-950 dark:text-white">{PASSWORD_TEXT.changeTitle}</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">{PASSWORD_TEXT.changeHelp}</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" type="password" autoComplete="current-password" {...register("current", { required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" })} error={errors.current?.message} />
+        <Input label={PASSWORD_TEXT.current} type="password" autoComplete="current-password" {...register("current", { required: PASSWORD_TEXT.currentReq })} error={errors.current?.message} />
         <Input
-          label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ"
+          label={PASSWORD_TEXT.newPw}
           type="password"
           autoComplete="new-password"
           {...register("new", {
-            required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ",
-            minLength: { value: 8, message: "à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£" },
+            required: PASSWORD_TEXT.newReq,
+            minLength: { value: 8, message: PASSWORD_TEXT.min8 },
             validate: (value) =>
-              (/[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value)) || "à¸•à¹‰à¸­à¸‡à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹ƒà¸«à¸à¹ˆ à¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹€à¸¥à¹‡à¸ à¹à¸¥à¸°à¸•à¸±à¸§à¹€à¸¥à¸‚",
+              (/[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value)) || PASSWORD_TEXT.strongReq,
           })}
           error={errors.new?.message}
         />
@@ -142,35 +172,35 @@ function ChangePasswordForm(): JSX.Element {
         <div className="grid gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-950/60 sm:grid-cols-2">
           {passwordChecks.map((item) => (
             <span key={item.label} className={item.pass ? "text-emerald-600 dark:text-emerald-300" : "text-gray-500 dark:text-slate-400"}>
-              {item.pass ? "âœ“" : "â€¢"} {item.label}
+              {item.pass ? "\u2713" : "\u2022"} {item.label}
             </span>
           ))}
         </div>
 
-        <Input label="à¸¢à¸·à¸™à¸¢à¸±à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ" type="password" autoComplete="new-password" {...register("confirm", { validate: (value) => value === watch("new") || "à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸•à¸£à¸‡à¸à¸±à¸™" })} error={errors.confirm?.message} />
+        <Input label={PASSWORD_TEXT.confirm} type="password" autoComplete="new-password" {...register("confirm", { validate: (value) => value === watch("new") || PASSWORD_TEXT.notMatch })} error={errors.confirm?.message} />
 
         <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-950/20">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-semibold text-gray-950 dark:text-white">à¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¸²à¸£à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™</p>
-              <p className="text-sm text-gray-600 dark:text-slate-400">à¸£à¸°à¸šà¸šà¸ˆà¸°à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ª 6 à¸«à¸¥à¸±à¸à¹„à¸›à¸—à¸µà¹ˆà¸­à¸µà¹€à¸¡à¸¥à¸šà¸±à¸à¸Šà¸µà¸‚à¸­à¸‡à¸„à¸¸à¸“ à¸£à¸«à¸±à¸ªà¸«à¸¡à¸”à¸­à¸²à¸¢à¸¸à¹ƒà¸™ 10 à¸™à¸²à¸—à¸µ</p>
+              <p className="font-semibold text-gray-950 dark:text-white">{PASSWORD_TEXT.verifyTitle}</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">{PASSWORD_TEXT.verifyHelp}</p>
             </div>
             <button type="button" onClick={requestCode} disabled={sendingCode} className="btn btn-secondary">
               {sendingCode ? <Spinner className="h-4 w-4" /> : <Mail size={16} />}
-              {codeSent ? "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡" : "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™"}
+              {codeSent ? PASSWORD_TEXT.resend : PASSWORD_TEXT.sendCode}
             </button>
           </div>
 
           {codeSent && (
             <div className="mt-4">
               <Input
-                label="à¸£à¸«à¸±à¸ª OTP 6 à¸«à¸¥à¸±à¸"
+                label={PASSWORD_TEXT.otpLabel}
                 inputMode="numeric"
                 maxLength={6}
-                placeholder="à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸ˆà¸²à¸à¸­à¸µà¹€à¸¡à¸¥"
+                placeholder={PASSWORD_TEXT.otpPlaceholder}
                 {...register("otp", {
-                  required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ª OTP",
-                  pattern: { value: /^\d{6}$/, message: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ª 6 à¸«à¸¥à¸±à¸" },
+                  required: PASSWORD_TEXT.otpReq,
+                  pattern: { value: /^\d{6}$/, message: PASSWORD_TEXT.otpPattern },
                 })}
                 error={errors.otp?.message}
               />
@@ -181,7 +211,7 @@ function ChangePasswordForm(): JSX.Element {
         <div className="flex justify-end">
           <button type="submit" disabled={saving || !codeSent} className="btn btn-primary">
             {saving ? <Spinner className="h-4 w-4" /> : <Save size={16} />}
-            à¸šà¸±à¸™à¸—à¸¶à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™
+            {PASSWORD_TEXT.save}
           </button>
         </div>
       </form>
@@ -547,6 +577,9 @@ export default function Profile() {
     </>
   );
 }
+
+
+
 
 
 
