@@ -63,10 +63,10 @@ function ChangePasswordForm(): JSX.Element {
     setSaving(true);
     try {
       await api.post("/auth/change-password", { current_password: data.current, new_password: data.new });
-      toast.success("à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹à¸¥à¹‰à¸§ à¸à¸£à¸¸à¸“à¸²à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸šà¹ƒà¸«à¸¡à¹ˆ");
+      toast.success("เปลี่ยนรหัสผ่านแล้ว กรุณาเข้าสู่ระบบใหม่");
       reset();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || "à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error(err?.response?.data?.error?.message || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
     } finally {
       setSaving(false);
     }
@@ -79,19 +79,19 @@ function ChangePasswordForm(): JSX.Element {
           <Lock size={20} />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-950 dark:text-white">à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™</h3>
-          <p className="text-sm text-gray-500 dark:text-slate-400">à¹ƒà¸Šà¹‰à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆà¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£</p>
+          <h3 className="font-semibold text-gray-950 dark:text-white">เปลี่ยนรหัสผ่าน</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">ใช้รหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" type="password" {...register("current", { required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" })} error={errors.current?.message} />
-        <Input label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ" type="password" {...register("new", { required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ", minLength: { value: 8, message: "à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£" } })} error={errors.new?.message} />
-        <Input label="à¸¢à¸·à¸™à¸¢à¸±à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ" type="password" {...register("confirm", { validate: (value) => value === watch("new") || "à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸•à¸£à¸‡à¸à¸±à¸™" })} error={errors.confirm?.message} />
+        <Input label="รหัสผ่านปัจจุบัน" type="password" {...register("current", { required: "กรุณากรอกรหัสผ่านปัจจุบัน" })} error={errors.current?.message} />
+        <Input label="รหัสผ่านใหม่" type="password" {...register("new", { required: "กรุณากรอกรหัสผ่านใหม่", minLength: { value: 8, message: "อย่างน้อย 8 ตัวอักษร" } })} error={errors.new?.message} />
+        <Input label="ยืนยันรหัสผ่านใหม่" type="password" {...register("confirm", { validate: (value) => value === watch("new") || "รหัสผ่านไม่ตรงกัน" })} error={errors.confirm?.message} />
         <div className="flex justify-end">
           <button type="submit" disabled={saving} className="btn btn-primary">
             {saving ? <Spinner className="h-4 w-4" /> : <Save size={16} />}
-            à¸šà¸±à¸™à¸—à¸¶à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™
+            บันทึกรหัสผ่าน
           </button>
         </div>
       </form>
@@ -150,9 +150,9 @@ export default function Profile() {
       await api.patch("/users/me", data);
       const meRes = await api.get("/auth/me");
       setUser(meRes.data.data);
-      toast.success("à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸šà¸±à¸à¸Šà¸µà¹à¸¥à¹‰à¸§");
+      toast.success("บันทึกข้อมูลบัญชีแล้ว");
     } catch {
-      toast.error("à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error("บันทึกข้อมูลไม่สำเร็จ");
     } finally {
       setSaving(false);
     }
@@ -167,9 +167,9 @@ export default function Profile() {
       await api.post("/users/me/avatar", form, { headers: { "Content-Type": "multipart/form-data" } });
       const meRes = await api.get("/auth/me");
       setUser(meRes.data.data);
-      toast.success("à¸­à¸±à¸›à¹€à¸”à¸•à¸£à¸¹à¸›à¹‚à¸›à¸£à¹„à¸Ÿà¸¥à¹Œà¹à¸¥à¹‰à¸§");
+      toast.success("อัปเดตรูปโปรไฟล์แล้ว");
     } catch {
-      toast.error("à¸­à¸±à¸›à¹‚à¸«à¸¥à¸”à¸£à¸¹à¸›à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error("อัปโหลดรูปไม่สำเร็จ");
     }
   };
 
@@ -185,9 +185,9 @@ export default function Profile() {
       await loadAddresses();
       setAddrModal(false);
       addrForm.reset({ label: ADDRESS_LABEL_HOME });
-      toast.success("à¹€à¸žà¸´à¹ˆà¸¡à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§");
+      toast.success("เพิ่มที่อยู่แล้ว");
     } catch {
-      toast.error("à¹€à¸žà¸´à¹ˆà¸¡à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error("เพิ่มที่อยู่ไม่สำเร็จ");
     }
   };
 
@@ -195,9 +195,9 @@ export default function Profile() {
     try {
       await api.delete(`/users/me/addresses/${id}`);
       setAddresses((current) => current.filter((address) => address.id !== id));
-      toast.success("à¸¥à¸šà¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹à¸¥à¹‰à¸§");
+      toast.success("ลบที่อยู่แล้ว");
     } catch {
-      toast.error("à¸¥à¸šà¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+      toast.error("ลบที่อยู่ไม่สำเร็จ");
     }
   };
 
@@ -206,15 +206,15 @@ export default function Profile() {
   const addressLabel = addrForm.watch("label") || ADDRESS_LABEL_HOME;
 
   const tabs = [
-    { id: "profile", label: "à¹‚à¸›à¸£à¹„à¸Ÿà¸¥à¹Œ", icon: User },
-    { id: "addresses", label: "à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ", icon: MapPin },
-    { id: "security", label: "à¸„à¸§à¸²à¸¡à¸›à¸¥à¸­à¸”à¸ à¸±à¸¢", icon: Shield },
+    { id: "profile", label: "โปรไฟล์", icon: User },
+    { id: "addresses", label: "ที่อยู่", icon: MapPin },
+    { id: "security", label: "ความปลอดภัย", icon: Shield },
   ] as const;
 
   return (
     <>
       <Helmet>
-        <title>à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸šà¸±à¸à¸Šà¸µ - ShopX</title>
+        <title>ตั้งค่าบัญชี - ShopX</title>
       </Helmet>
 
       <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -226,8 +226,8 @@ export default function Profile() {
                   <Sparkles size={14} />
                   Account Center
                 </div>
-                <h1 className="text-2xl font-bold sm:text-3xl">à¸•à¸±à¹‰à¸‡à¸„à¹ˆà¸²à¸šà¸±à¸à¸Šà¸µ</h1>
-                <p className="mt-1 text-sm text-slate-300">à¸ˆà¸±à¸”à¸à¸²à¸£à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¹ˆà¸§à¸™à¸•à¸±à¸§ à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¸ˆà¸±à¸”à¸ªà¹ˆà¸‡ à¹à¸¥à¸°à¸„à¸§à¸²à¸¡à¸›à¸¥à¸­à¸”à¸ à¸±à¸¢à¸‚à¸­à¸‡à¸šà¸±à¸à¸Šà¸µ</p>
+                <h1 className="text-2xl font-bold sm:text-3xl">ตั้งค่าบัญชี</h1>
+                <p className="mt-1 text-sm text-slate-300">จัดการข้อมูลส่วนตัว ที่อยู่จัดส่ง และความปลอดภัยของบัญชี</p>
               </div>
 
               <div className="flex items-center gap-4 rounded-lg bg-white/10 p-4 backdrop-blur">
@@ -241,13 +241,13 @@ export default function Profile() {
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onAvatarChange} />
                 </div>
                 <div>
-                  <p className="font-semibold">{user?.full_name || "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸•à¸±à¹‰à¸‡à¸Šà¸·à¹ˆà¸­"}</p>
+                  <p className="font-semibold">{user?.full_name || "ยังไม่ได้ตั้งชื่อ"}</p>
                   <p className="text-sm text-slate-300">{user?.email}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <span className="rounded-full bg-orange-500/20 px-2.5 py-1 text-xs font-semibold text-orange-100">{user?.role || "buyer"}</span>
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${user?.is_email_verified ? "bg-emerald-500/20 text-emerald-100" : "bg-yellow-500/20 text-yellow-100"}`}>
                       <BadgeCheck size={12} />
-                      {user?.is_email_verified ? "à¸¢à¸·à¸™à¸¢à¸±à¸™à¸­à¸µà¹€à¸¡à¸¥à¹à¸¥à¹‰à¸§" : "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¢à¸·à¸™à¸¢à¸±à¸™à¸­à¸µà¹€à¸¡à¸¥"}
+                      {user?.is_email_verified ? "ยืนยันอีเมลแล้ว" : "ยังไม่ยืนยันอีเมล"}
                     </span>
                   </div>
                 </div>
@@ -257,16 +257,16 @@ export default function Profile() {
 
           <div className="grid gap-3 border-t border-gray-200 p-4 dark:border-slate-800 sm:grid-cols-3">
             <div className="rounded-lg bg-gray-50 p-4 dark:bg-slate-950/60">
-              <p className="text-xs text-gray-500 dark:text-slate-400">à¸­à¸µà¹€à¸¡à¸¥</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">อีเมล</p>
               <p className="mt-1 truncate font-semibold text-gray-950 dark:text-white">{user?.email || "-"}</p>
             </div>
             <div className="rounded-lg bg-gray-50 p-4 dark:bg-slate-950/60">
-              <p className="text-xs text-gray-500 dark:text-slate-400">à¸ªà¸´à¸—à¸˜à¸´à¹Œà¸šà¸±à¸à¸Šà¸µ</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">สิทธิ์บัญชี</p>
               <p className="mt-1 font-semibold capitalize text-gray-950 dark:text-white">{user?.role || "buyer"}</p>
             </div>
             <div className="rounded-lg bg-gray-50 p-4 dark:bg-slate-950/60">
-              <p className="text-xs text-gray-500 dark:text-slate-400">à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¸ˆà¸±à¸”à¸ªà¹ˆà¸‡</p>
-              <p className="mt-1 font-semibold text-gray-950 dark:text-white">{addrLoaded ? `${addresses.length} à¸£à¸²à¸¢à¸à¸²à¸£` : "à¸à¸”à¸”à¸¹à¹ƒà¸™à¹à¸—à¹‡à¸šà¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ"}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">ที่อยู่จัดส่ง</p>
+              <p className="mt-1 font-semibold text-gray-950 dark:text-white">{addrLoaded ? `${addresses.length} รายการ` : "กดดูในแท็บที่อยู่"}</p>
             </div>
           </div>
         </div>
@@ -296,22 +296,22 @@ export default function Profile() {
             {tab === "profile" && (
               <form onSubmit={handleSubmit(onSaveProfile)} className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
                 <div className="mb-5">
-                  <h2 className="text-xl font-bold text-gray-950 dark:text-white">à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸ªà¹ˆà¸§à¸™à¸•à¸±à¸§</h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸™à¸µà¹‰à¹ƒà¸Šà¹‰à¹à¸ªà¸”à¸‡à¹ƒà¸™à¸£à¸°à¸šà¸šà¹à¸¥à¸°à¸•à¸´à¸”à¸•à¹ˆà¸­à¹€à¸£à¸·à¹ˆà¸­à¸‡à¸„à¸³à¸ªà¸±à¹ˆà¸‡à¸‹à¸·à¹‰à¸­</p>
+                  <h2 className="text-xl font-bold text-gray-950 dark:text-white">ข้อมูลส่วนตัว</h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">ข้อมูลนี้ใช้แสดงในระบบและติดต่อเรื่องคำสั่งซื้อ</p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <Input label="à¸Šà¸·à¹ˆà¸­-à¸™à¸²à¸¡à¸ªà¸à¸¸à¸¥" {...register("full_name", { required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸Šà¸·à¹ˆà¸­" })} error={errors.full_name?.message} />
+                    <Input label="ชื่อ-นามสกุล" {...register("full_name", { required: "กรุณากรอกชื่อ" })} error={errors.full_name?.message} />
                   </div>
-                  <Input label="à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¹ƒà¸Šà¹‰" placeholder="à¹„à¸¡à¹ˆà¸šà¸±à¸‡à¸„à¸±à¸š" {...register("username")} />
-                  <Input label="à¹€à¸šà¸­à¸£à¹Œà¹‚à¸—à¸£à¸¨à¸±à¸žà¸—à¹Œ" placeholder="+66..." {...register("phone")} />
+                  <Input label="ชื่อผู้ใช้" placeholder="ไม่บังคับ" {...register("username")} />
+                  <Input label="เบอร์โทรศัพท์" placeholder="+66..." {...register("phone")} />
                 </div>
 
                 <div className="mt-6 flex justify-end">
                   <button type="submit" disabled={saving} className="btn btn-primary">
                     {saving ? <Spinner className="h-4 w-4" /> : <Save size={16} />}
-                    à¸šà¸±à¸™à¸—à¸¶à¸à¸‚à¹‰à¸­à¸¡à¸¹à¸¥
+                    บันทึกข้อมูล
                   </button>
                 </div>
               </form>
@@ -321,20 +321,20 @@ export default function Profile() {
               <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
                 <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-gray-950 dark:text-white">à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¸ˆà¸±à¸”à¸ªà¹ˆà¸‡</h2>
-                    <p className="text-sm text-gray-500 dark:text-slate-400">à¸šà¸±à¸™à¸—à¸¶à¸à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹à¸¥à¸°à¸›à¸±à¸à¸«à¸¡à¸¸à¸”à¹€à¸žà¸·à¹ˆà¸­à¸„à¸³à¸™à¸§à¸“à¸„à¹ˆà¸²à¸ªà¹ˆà¸‡</p>
+                    <h2 className="text-xl font-bold text-gray-950 dark:text-white">ที่อยู่จัดส่ง</h2>
+                    <p className="text-sm text-gray-500 dark:text-slate-400">บันทึกที่อยู่และปักหมุดเพื่อคำนวณค่าส่ง</p>
                   </div>
                   <button type="button" onClick={() => setAddrModal(true)} className="btn btn-primary">
                     <Plus size={16} />
-                    à¹€à¸žà¸´à¹ˆà¸¡à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ
+                    เพิ่มที่อยู่
                   </button>
                 </div>
 
                 {addresses.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center dark:border-slate-700">
                     <MapPin className="mx-auto mb-3 h-9 w-9 text-gray-400" />
-                    <p className="font-semibold text-gray-950 dark:text-white">à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¡à¸µà¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ</p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">à¹€à¸žà¸´à¹ˆà¸¡à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹à¸£à¸à¹€à¸žà¸·à¹ˆà¸­à¹ƒà¸Šà¹‰à¸•à¸­à¸™à¸Šà¸³à¸£à¸°à¹€à¸‡à¸´à¸™</p>
+                    <p className="font-semibold text-gray-950 dark:text-white">ยังไม่มีที่อยู่</p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">เพิ่มที่อยู่แรกเพื่อใช้ตอนชำระเงิน</p>
                   </div>
                 ) : (
                   <div className="grid gap-3">
@@ -349,14 +349,14 @@ export default function Profile() {
                               <div className="flex flex-wrap items-center gap-2">
                                 <p className="font-semibold text-gray-950 dark:text-white">{address.recipient_name}</p>
                                 <span className="rounded-full bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-300">{address.label}</span>
-                                {address.is_default && <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-300">à¸„à¹ˆà¸²à¹€à¸£à¸´à¹ˆà¸¡à¸•à¹‰à¸™</span>}
+                                {address.is_default && <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-300">ค่าเริ่มต้น</span>}
                               </div>
                               <p className="mt-1 flex items-center gap-1 text-sm text-gray-600 dark:text-slate-400"><Phone size={14} /> {address.phone}</p>
                               <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">{address.address_line1}, {address.city}, {address.state} {address.postal_code}</p>
                               {address.latitude && address.longitude && (
                                 <a className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:underline" href={`https://www.google.com/maps?q=${address.latitude},${address.longitude}`} target="_blank" rel="noreferrer">
                                   <Navigation size={13} />
-                                  à¸”à¸¹à¸«à¸¡à¸¸à¸”à¹ƒà¸™ Google Maps
+                                  ดูหมุดใน Google Maps
                                 </a>
                               )}
                             </div>
@@ -380,10 +380,10 @@ export default function Profile() {
                       <Mail size={20} />
                     </div>
                     <div>
-                      <h2 className="font-semibold text-gray-950 dark:text-white">à¸­à¸µà¹€à¸¡à¸¥à¸šà¸±à¸à¸Šà¸µ</h2>
+                      <h2 className="font-semibold text-gray-950 dark:text-white">อีเมลบัญชี</h2>
                       <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">{user?.email}</p>
                       <span className={`mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${user?.is_email_verified ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300" : "bg-yellow-500/10 text-yellow-600 dark:text-yellow-300"}`}>
-                        {user?.is_email_verified ? "à¸¢à¸·à¸™à¸¢à¸±à¸™à¸­à¸µà¹€à¸¡à¸¥à¹à¸¥à¹‰à¸§" : "à¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸¢à¸·à¸™à¸¢à¸±à¸™à¸­à¸µà¹€à¸¡à¸¥"}
+                        {user?.is_email_verified ? "ยืนยันอีเมลแล้ว" : "ยังไม่ยืนยันอีเมล"}
                       </span>
                     </div>
                   </div>
@@ -395,10 +395,10 @@ export default function Profile() {
         </div>
       </div>
 
-      <Modal open={addrModal} onClose={() => setAddrModal(false)} title="à¹€à¸žà¸´à¹ˆà¸¡à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆà¹ƒà¸«à¸¡à¹ˆ">
+      <Modal open={addrModal} onClose={() => setAddrModal(false)} title="เพิ่มที่อยู่ใหม่">
         <form onSubmit={addrForm.handleSubmit(onAddAddress)} className="space-y-4">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">à¸›à¸£à¸°à¹€à¸ à¸—à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ *</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">ประเภทที่อยู่ *</label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
               {ADDRESS_LABEL_OPTIONS.map((option) => (
                 <label
@@ -414,28 +414,28 @@ export default function Profile() {
             </div>
             {addressLabel === ADDRESS_LABEL_OTHER && (
               <div className="mt-3">
-                <Input label="à¸Šà¸·à¹ˆà¸­à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ" placeholder="à¹€à¸Šà¹ˆà¸™ à¸šà¹‰à¸²à¸™à¹à¸¡à¹ˆ / à¹‚à¸à¸”à¸±à¸‡ / à¸£à¹‰à¸²à¸™" {...addrForm.register("label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
+                <Input label="ชื่อที่อยู่" placeholder="เช่น บ้านแม่ / โกดัง / ร้าน" {...addrForm.register("label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
               </div>
             )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input label="à¸Šà¸·à¹ˆà¸­à¸œà¸¹à¹‰à¸£à¸±à¸š" {...addrForm.register("recipient_name", { required: true })} />
-            <Input label="à¹€à¸šà¸­à¸£à¹Œà¹‚à¸—à¸£" {...addrForm.register("phone", { required: true })} />
+            <Input label="ชื่อผู้รับ" {...addrForm.register("recipient_name", { required: true })} />
+            <Input label="เบอร์โทร" {...addrForm.register("phone", { required: true })} />
             <div className="sm:col-span-2">
-              <Input label="à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ" {...addrForm.register("address_line1", { required: true })} />
+              <Input label="ที่อยู่" {...addrForm.register("address_line1", { required: true })} />
             </div>
-            <Input label="à¸­à¸³à¹€à¸ à¸­ / à¹€à¸‚à¸•" {...addrForm.register("city", { required: true })} />
-            <Input label="à¸ˆà¸±à¸‡à¸«à¸§à¸±à¸”" {...addrForm.register("state", { required: true })} />
-            <Input label="à¸£à¸«à¸±à¸ªà¹„à¸›à¸£à¸©à¸“à¸µà¸¢à¹Œ" {...addrForm.register("postal_code", { required: true })} />
+            <Input label="อำเภอ / เขต" {...addrForm.register("city", { required: true })} />
+            <Input label="จังหวัด" {...addrForm.register("state", { required: true })} />
+            <Input label="รหัสไปรษณีย์" {...addrForm.register("postal_code", { required: true })} />
           </div>
 
           <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-950/20">
             <div className="mb-3 flex items-start gap-2">
               <MapPin size={18} className="mt-0.5 shrink-0 text-orange-500" />
               <div>
-                <p className="font-semibold text-gray-950 dark:text-white">à¸«à¸¡à¸¸à¸”à¸ˆà¸±à¸”à¸ªà¹ˆà¸‡</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400">à¸¥à¸²à¸à¹à¸œà¸™à¸—à¸µà¹ˆà¹ƒà¸«à¹‰à¸«à¸¡à¸¸à¸”à¸­à¸¢à¸¹à¹ˆà¸•à¸£à¸‡à¸ˆà¸¸à¸”à¸ˆà¸±à¸”à¸ªà¹ˆà¸‡ à¹ƒà¸Šà¹‰à¸ªà¸³à¸«à¸£à¸±à¸šà¸„à¸³à¸™à¸§à¸“à¸„à¹ˆà¸²à¸ªà¹ˆà¸‡</p>
+                <p className="font-semibold text-gray-950 dark:text-white">หมุดจัดส่ง</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">ลากแผนที่ให้หมุดอยู่ตรงจุดจัดส่ง ใช้สำหรับคำนวณค่าส่ง</p>
               </div>
             </div>
             <MapPinPicker
@@ -449,12 +449,13 @@ export default function Profile() {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setAddrModal(false)} className="btn btn-secondary">à¸¢à¸à¹€à¸¥à¸´à¸</button>
-            <button type="submit" className="btn btn-primary">à¸šà¸±à¸™à¸—à¸¶à¸à¸—à¸µà¹ˆà¸­à¸¢à¸¹à¹ˆ</button>
+            <button type="button" onClick={() => setAddrModal(false)} className="btn btn-secondary">ยกเลิก</button>
+            <button type="submit" className="btn btn-primary">บันทึกที่อยู่</button>
           </div>
         </form>
       </Modal>
     </>
   );
 }
+
 

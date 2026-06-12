@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -63,7 +63,7 @@ function printOrderInvoice(order: any, mode: "customer" | "seller" = "customer")
     <tr>
       <td>
         <strong>${escapeHtml(item.product_name)}</strong>
-        <div class="muted">${escapeHtml(item.sku || "No SKU")}${item.variant_name ? " Â· " + escapeHtml(item.variant_name) : ""}</div>
+        <div class="muted">${escapeHtml(item.sku || "No SKU")}${item.variant_name ? " ? " + escapeHtml(item.variant_name) : ""}</div>
       </td>
       <td class="right">${escapeHtml(item.quantity)}</td>
       <td class="right">${escapeHtml(formatPrice(item.unit_price))}</td>
@@ -142,7 +142,7 @@ function printOrderInvoice(order: any, mode: "customer" | "seller" = "customer")
         </div>
 
         <div class="footer">
-          Status: ${escapeHtml(order.status)}${order.tracking_number ? " Â· Tracking: " + escapeHtml(order.tracking_number) : ""}<br/>
+          Status: ${escapeHtml(order.status)}${order.tracking_number ? " ? Tracking: " + escapeHtml(order.tracking_number) : ""}<br/>
           This document was generated automatically from the order record.
         </div>
       </div>
@@ -423,8 +423,8 @@ export default function SellerOrders() {
                         <p className="text-xs text-gray-500 truncate">
                           {order.items?.[0]?.product_name || "Order items"}
                           {(order.items?.length || 0) > 1 ? ` +${(order.items?.length || 0) - 1} more` : ""}
-                          {order.tracking_number ? ` · Tracking ${order.tracking_number}` : ""}
-                          {order.notes ? ` · Note: ${order.notes}` : ""}
+                          {order.tracking_number ? ` ? Tracking ${order.tracking_number}` : ""}
+                          {order.notes ? ` ? Note: ${order.notes}` : ""}
                         </p>
                       </div>
                     </div>
@@ -502,7 +502,7 @@ export default function SellerOrders() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="font-medium truncate">{item.product_name}</p>
-                        <p className="text-xs text-gray-500">{item.sku || "No SKU"} {item.variant_name ? `· ${item.variant_name}` : ""}</p>
+                        <p className="text-xs text-gray-500">{item.sku || "No SKU"} {item.variant_name ? `? ${item.variant_name}` : ""}</p>
                       </div>
                       <p className="text-xs text-gray-500">x {item.quantity}</p>
                       <p className="font-medium">{formatPrice(item.total_price)}</p>
@@ -557,3 +557,4 @@ export default function SellerOrders() {
     </>
   );
 }
+

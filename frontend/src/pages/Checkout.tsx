@@ -75,7 +75,7 @@ interface SavedAddress {
   longitude?: string | null;
 }
 
-// â”€â”€ QR Code payment modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- QR Code payment modal --------------------------------
 function PromptPayModal({
   qrUrl,
   amount,
@@ -108,7 +108,7 @@ function PromptPayModal({
         toast.success("Payment confirmed!");
         onConfirmed();
       } else {
-        toast("Payment not confirmed yet. Please scan and pay.", { icon: "â³" });
+        toast("Payment not confirmed yet. Please scan and pay.", { icon: "?" });
       }
     } catch {
       toast.error("Could not check payment status");
@@ -161,7 +161,7 @@ function PromptPayModal({
             disabled={checking}
             className="btn btn-primary w-full"
           >
-            {checking ? <Spinner className="w-4 h-4" /> : <><CheckCircle size={16} /> I've Paid â€” Check Status</>}
+            {checking ? <Spinner className="w-4 h-4" /> : <><CheckCircle size={16} /> I've Paid ? Check Status</>}
           </button>
           <Link
             to={`/orders/${orderId}`}
@@ -179,7 +179,7 @@ function PromptPayModal({
   );
 }
 
-// â”€â”€ Stripe card form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Stripe card form -------------------------------------
 function StripeModal({
   orderId,
   orderNumber,
@@ -218,7 +218,7 @@ function StripeModal({
   );
 }
 
-// â”€â”€ Main Checkout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Main Checkout ----------------------------------------
 export default function Checkout() {
   const { cart, fetchCart } = useCartStore();
   const { mutateAsync: checkout, isPending } = useCheckout();
@@ -514,7 +514,7 @@ export default function Checkout() {
                           </div>
                           {addressLabel === ADDRESS_LABEL_OTHER && (
                             <div className="mt-3">
-                              <Input label="Ã Â¸Å Ã Â¸Â·Ã Â¹Ë†Ã Â¸Â­Ã Â¸â€”Ã Â¸ÂµÃ Â¹Ë†Ã Â¸Â­Ã Â¸Â¢Ã Â¸Â¹Ã Â¹Ë†" placeholder="Ã Â¹â‚¬Ã Â¸Å Ã Â¹Ë†Ã Â¸â„¢ Ã Â¸Å¡Ã Â¹â€°Ã Â¸Â²Ã Â¸â„¢Ã Â¹ÂÃ Â¸Â¡Ã Â¹Ë† / Ã Â¹â€šÃ Â¸ÂÃ Â¸â€Ã Â¸Â±Ã Â¸â€¡ / Ã Â¸Â£Ã Â¹â€°Ã Â¸Â²Ã Â¸â„¢" {...register("address_label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
+                              <Input label="???????????" placeholder="???? ??????? / ????? / ????" {...register("address_label_other", { required: addressLabel === ADDRESS_LABEL_OTHER })} />
                             </div>
                           )}
                         </div>
@@ -587,7 +587,7 @@ export default function Checkout() {
                       value: "promptpay",
                       label: "PromptPay QR Code",
                       icon: <QrCode size={22} />,
-                      desc: "Scan with any Thai banking app â€” instant confirmation",
+                      desc: "Scan with any Thai banking app ? instant confirmation",
                       badge: "Recommended",
                       badgeColor: "bg-green-100 text-green-700",
                     },
@@ -595,7 +595,7 @@ export default function Checkout() {
                       value: "stripe",
                       label: "Credit / Debit Card",
                       icon: <CreditCard size={22} />,
-                      desc: "Visa, Mastercard, JCB â€” secured by Stripe",
+                      desc: "Visa, Mastercard, JCB ? secured by Stripe",
                       badge: null,
                       badgeColor: "",
                     },
@@ -603,7 +603,7 @@ export default function Checkout() {
                       value: "wallet",
                       label: "ShopX Wallet",
                       icon: <Wallet size={22} />,
-                      desc: "Use your wallet balance â€” instant",
+                      desc: "Use your wallet balance ? instant",
                       badge: null,
                       badgeColor: "",
                     },
@@ -643,7 +643,7 @@ export default function Checkout() {
                   <div className="mt-3 bg-green-50 dark:bg-green-900/20 rounded-xl p-3 flex items-start gap-2">
                     <QrCode size={16} className="text-green-600 mt-0.5 shrink-0" />
                     <p className="text-xs text-green-700 dark:text-green-400">
-                      A QR code will appear after you place your order. Open your banking app â†’ PromptPay â†’ Scan QR to pay.
+                      A QR code will appear after you place your order. Open your banking app ? PromptPay ? Scan QR to pay.
                     </p>
                   </div>
                 )}
@@ -664,7 +664,7 @@ export default function Checkout() {
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium line-clamp-1">{item.product_name}</p>
                       {item.variant_name && <p className="text-xs text-gray-400">{item.variant_name}</p>}
-                      <p className="text-xs text-gray-500">Ã— {item.quantity}</p>
+                      <p className="text-xs text-gray-500">? {item.quantity}</p>
                     </div>
                     <span className="text-xs font-medium shrink-0">{formatPrice(item.subtotal)}</span>
                   </div>
@@ -723,6 +723,7 @@ export default function Checkout() {
     </>
   );
 }
+
 
 
 
