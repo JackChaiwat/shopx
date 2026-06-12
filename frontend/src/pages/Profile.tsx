@@ -55,18 +55,58 @@ function ChangePasswordForm(): JSX.Element {
     handleSubmit,
     reset,
     watch,
+    getValues,
+    trigger,
     formState: { errors },
-  } = useForm<{ current: string; new: string; confirm: string }>();
+  } = useForm<{ current: string; new: string; confirm: string; otp: string }>();
   const [saving, setSaving] = useState(false);
+  const [sendingCode, setSendingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
+  const { logout } = useAuthStore();
 
-  const onSubmit = async (data: { current: string; new: string }) => {
+  const newPassword = watch("new") || "";
+  const passwordChecks = [
+    { label: "à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£", pass: newPassword.length >= 8 },
+    { label: "à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹ƒà¸«à¸à¹ˆ", pass: /[A-Z]/.test(newPassword) },
+    { label: "à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹€à¸¥à¹‡à¸", pass: /[a-z]/.test(newPassword) },
+    { label: "à¸¡à¸µà¸•à¸±à¸§à¹€à¸¥à¸‚", pass: /\d/.test(newPassword) },
+  ];
+
+  const requestCode = async () => {
+    const ok = await trigger(["current", "new", "confirm"]);
+    if (!ok) return;
+
+    setSendingCode(true);
+    try {
+      await api.post("/auth/send-change-password-otp", { current_password: getValues("current") });
+      setCodeSent(true);
+      toast.success("à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¹„à¸›à¸—à¸µà¹ˆà¸­à¸µà¹€à¸¡à¸¥à¹à¸¥à¹‰à¸§");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error?.message || "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const onSubmit = async (data: { current: string; new: string; otp: string }) => {
+    if (!codeSent) {
+      toast.error("à¸à¸£à¸¸à¸“à¸²à¸‚à¸­à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¹ˆà¸­à¸™");
+      return;
+    }
+
     setSaving(true);
     try {
-      await api.post("/auth/change-password", { current_password: data.current, new_password: data.new });
-      toast.success("เปลี่ยนรหัสผ่านแล้ว กรุณาเข้าสู่ระบบใหม่");
+      await api.post("/auth/change-password", {
+        current_password: data.current,
+        new_password: data.new,
+        otp: data.otp,
+      });
+      toast.success("à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹à¸¥à¹‰à¸§ à¸à¸£à¸¸à¸“à¸²à¹€à¸‚à¹‰à¸²à¸ªà¸¹à¹ˆà¸£à¸°à¸šà¸šà¹ƒà¸«à¸¡à¹ˆ");
       reset();
+      setCodeSent(false);
+      logout();
     } catch (err: any) {
-      toast.error(err?.response?.data?.error?.message || "เปลี่ยนรหัสผ่านไม่สำเร็จ");
+      toast.error(err?.response?.data?.error?.message || "à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ");
     } finally {
       setSaving(false);
     }
@@ -79,19 +119,69 @@ function ChangePasswordForm(): JSX.Element {
           <Lock size={20} />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-950 dark:text-white">เปลี่ยนรหัสผ่าน</h3>
-          <p className="text-sm text-gray-500 dark:text-slate-400">ใช้รหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร</p>
+          <h3 className="font-semibold text-gray-950 dark:text-white">à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™</h3>
+          <p className="text-sm text-gray-500 dark:text-slate-400">à¸¢à¸·à¸™à¸¢à¸±à¸™à¸”à¹‰à¸§à¸¢à¸£à¸«à¸±à¸ª OTP à¸—à¸²à¸‡à¸­à¸µà¹€à¸¡à¸¥à¸à¹ˆà¸­à¸™à¸šà¸±à¸™à¸—à¸¶à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <Input label="รหัสผ่านปัจจุบัน" type="password" {...register("current", { required: "กรุณากรอกรหัสผ่านปัจจุบัน" })} error={errors.current?.message} />
-        <Input label="รหัสผ่านใหม่" type="password" {...register("new", { required: "กรุณากรอกรหัสผ่านใหม่", minLength: { value: 8, message: "อย่างน้อย 8 ตัวอักษร" } })} error={errors.new?.message} />
-        <Input label="ยืนยันรหัสผ่านใหม่" type="password" {...register("confirm", { validate: (value) => value === watch("new") || "รหัสผ่านไม่ตรงกัน" })} error={errors.confirm?.message} />
+        <Input label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" type="password" autoComplete="current-password" {...register("current", { required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¸›à¸±à¸ˆà¸ˆà¸¸à¸šà¸±à¸™" })} error={errors.current?.message} />
+        <Input
+          label="à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ"
+          type="password"
+          autoComplete="new-password"
+          {...register("new", {
+            required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ",
+            minLength: { value: 8, message: "à¸­à¸¢à¹ˆà¸²à¸‡à¸™à¹‰à¸­à¸¢ 8 à¸•à¸±à¸§à¸­à¸±à¸à¸©à¸£" },
+            validate: (value) =>
+              (/[A-Z]/.test(value) && /[a-z]/.test(value) && /\d/.test(value)) || "à¸•à¹‰à¸­à¸‡à¸¡à¸µà¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹ƒà¸«à¸à¹ˆ à¸•à¸±à¸§à¸žà¸´à¸¡à¸žà¹Œà¹€à¸¥à¹‡à¸ à¹à¸¥à¸°à¸•à¸±à¸§à¹€à¸¥à¸‚",
+          })}
+          error={errors.new?.message}
+        />
+
+        <div className="grid gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-950/60 sm:grid-cols-2">
+          {passwordChecks.map((item) => (
+            <span key={item.label} className={item.pass ? "text-emerald-600 dark:text-emerald-300" : "text-gray-500 dark:text-slate-400"}>
+              {item.pass ? "âœ“" : "â€¢"} {item.label}
+            </span>
+          ))}
+        </div>
+
+        <Input label="à¸¢à¸·à¸™à¸¢à¸±à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹ƒà¸«à¸¡à¹ˆ" type="password" autoComplete="new-password" {...register("confirm", { validate: (value) => value === watch("new") || "à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™à¹„à¸¡à¹ˆà¸•à¸£à¸‡à¸à¸±à¸™" })} error={errors.confirm?.message} />
+
+        <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-950/20">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-semibold text-gray-950 dark:text-white">à¸¢à¸·à¸™à¸¢à¸±à¸™à¸à¸²à¸£à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™</p>
+              <p className="text-sm text-gray-600 dark:text-slate-400">à¸£à¸°à¸šà¸šà¸ˆà¸°à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ª 6 à¸«à¸¥à¸±à¸à¹„à¸›à¸—à¸µà¹ˆà¸­à¸µà¹€à¸¡à¸¥à¸šà¸±à¸à¸Šà¸µà¸‚à¸­à¸‡à¸„à¸¸à¸“ à¸£à¸«à¸±à¸ªà¸«à¸¡à¸”à¸­à¸²à¸¢à¸¸à¹ƒà¸™ 10 à¸™à¸²à¸—à¸µ</p>
+            </div>
+            <button type="button" onClick={requestCode} disabled={sendingCode} className="btn btn-secondary">
+              {sendingCode ? <Spinner className="h-4 w-4" /> : <Mail size={16} />}
+              {codeSent ? "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡" : "à¸ªà¹ˆà¸‡à¸£à¸«à¸±à¸ªà¸¢à¸·à¸™à¸¢à¸±à¸™"}
+            </button>
+          </div>
+
+          {codeSent && (
+            <div className="mt-4">
+              <Input
+                label="à¸£à¸«à¸±à¸ª OTP 6 à¸«à¸¥à¸±à¸"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ªà¸ˆà¸²à¸à¸­à¸µà¹€à¸¡à¸¥"
+                {...register("otp", {
+                  required: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ª OTP",
+                  pattern: { value: /^\d{6}$/, message: "à¸à¸£à¸¸à¸“à¸²à¸à¸£à¸­à¸à¸£à¸«à¸±à¸ª 6 à¸«à¸¥à¸±à¸" },
+                })}
+                error={errors.otp?.message}
+              />
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end">
-          <button type="submit" disabled={saving} className="btn btn-primary">
+          <button type="submit" disabled={saving || !codeSent} className="btn btn-primary">
             {saving ? <Spinner className="h-4 w-4" /> : <Save size={16} />}
-            บันทึกรหัสผ่าน
+            à¸šà¸±à¸™à¸—à¸¶à¸à¸£à¸«à¸±à¸ªà¸œà¹ˆà¸²à¸™
           </button>
         </div>
       </form>
@@ -457,5 +547,6 @@ export default function Profile() {
     </>
   );
 }
+
 
 

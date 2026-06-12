@@ -98,6 +98,11 @@ class OAuthCallbackRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+    otp: str
+
+
+class ChangePasswordOTPRequest(BaseModel):
+    current_password: str
 
     @field_validator("new_password")
     @classmethod
@@ -149,6 +154,30 @@ async def _send_verify_otp(user: User, background_tasks: BackgroundTasks) -> Non
         to=user.email,
         subject="Your ShopX verification code",
         template="otp_verification",
+        context={
+            "name": user.full_name,
+            "otp": otp,
+            "expiry_minutes": 10,
+        },
+    )
+
+
+async def _send_change_password_otp(user: User, background_tasks: BackgroundTasks) -> None:
+    allowed_minute = await rate_limit_check(f"otp_change_password_minute:{user.email}", limit=1, window=60)
+    if not allowed_minute:
+        raise BadRequestException("Please wait before requesting another password change code")
+
+    allowed_window = await rate_limit_check(f"otp_change_password_window:{user.email}", limit=5, window=900)
+    if not allowed_window:
+        raise BadRequestException("Too many password change code requests. Please try again later")
+
+    otp = _generate_otp()
+    await store_otp(f"change_password:{user.email}", otp, ttl=600)
+    background_tasks.add_task(
+        send_email_task.delay,
+        to=user.email,
+        subject="Your ShopX password change code",
+        template="otp_reset",
         context={
             "name": user.full_name,
             "otp": otp,
@@ -331,6 +360,22 @@ async def get_me(current_user: CurrentUser):
     return {"success": True, "data": _user_response(current_user)}
 
 
+@router.post("/send-change-password-otp")
+async def send_change_password_otp(
+    body: ChangePasswordOTPRequest,
+    background_tasks: BackgroundTasks,
+    current_user: CurrentUser,
+):
+    if not current_user.hashed_password:
+        raise BadRequestException("No password set for OAuth account")
+
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise UnauthorizedException("Current password is incorrect")
+
+    await _send_change_password_otp(current_user, background_tasks)
+    return {"success": True, "message": "Password change code sent to your email"}
+
+
 @router.post("/change-password")
 async def change_password(body: ChangePasswordRequest, current_user: CurrentUser, db: DBSession):
     if not current_user.hashed_password:
@@ -339,10 +384,22 @@ async def change_password(body: ChangePasswordRequest, current_user: CurrentUser
     if not verify_password(body.current_password, current_user.hashed_password):
         raise UnauthorizedException("Current password is incorrect")
 
+    if verify_password(body.new_password, current_user.hashed_password):
+        raise BadRequestException("New password must be different from the current password")
+
+    allowed_attempt = await rate_limit_check(f"otp_change_password_attempt:{current_user.email}", limit=10, window=900)
+    if not allowed_attempt:
+        raise BadRequestException("Too many invalid OTP attempts. Please request a new code later")
+
+    is_valid = await verify_otp(f"change_password:{current_user.email}", body.otp)
+    if not is_valid:
+        raise BadRequestException("Invalid or expired OTP code")
+
     repo = UserRepository(db)
     await repo.update(current_user, hashed_password=hash_password(body.new_password))
     await revoke_all_refresh_tokens(str(current_user.id))
 
+    logger.info("Password changed with OTP verification", user_id=str(current_user.id))
     return {"success": True, "message": "Password changed. Please log in again."}
 
 
@@ -467,4 +524,5 @@ async def reset_password_otp(body: ResetPasswordOTPRequest, db: DBSession):
 
     logger.info("Password reset via OTP", user_id=str(user.id))
     return {"success": True, "message": "Password reset successfully. Please log in."}
+
 
