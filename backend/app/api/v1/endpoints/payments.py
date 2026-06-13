@@ -1,5 +1,3 @@
-import hashlib
-import hmac
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Optional
@@ -335,6 +333,31 @@ async def _apply_omise_charge_status(charge: Any, db: DBSession) -> Optional[Pay
     if not payment:
         return None
 
+    charge_amount = _object_value(charge, "amount")
+    charge_currency = str(_object_value(charge, "currency", "")).lower()
+    expected_amount = int(payment.amount * 100)
+    try:
+        received_amount = int(charge_amount)
+    except (TypeError, ValueError):
+        raise BadRequestException("Invalid Omise charge amount")
+
+    if received_amount != expected_amount:
+        logger.warning(
+            "Omise charge amount mismatch",
+            charge_id=charge_id,
+            expected_amount=expected_amount,
+            received_amount=received_amount,
+        )
+        raise BadRequestException("Omise charge amount does not match payment")
+    if charge_currency != payment.currency.lower():
+        logger.warning(
+            "Omise charge currency mismatch",
+            charge_id=charge_id,
+            expected_currency=payment.currency.lower(),
+            received_currency=charge_currency,
+        )
+        raise BadRequestException("Omise charge currency does not match payment")
+
     metadata = dict(payment.payment_metadata or {})
     metadata.update({
         "gateway": "omise",
@@ -452,13 +475,10 @@ async def stripe_webhook(request: Request, db: DBSession, stripe_signature: str 
 
 
 @router.post("/webhook/omise")
-async def omise_webhook(request: Request, db: DBSession, secret: Optional[str] = None):
+async def omise_webhook(request: Request, db: DBSession):
     if not settings.OMISE_SECRET_KEY:
         raise BadRequestException("OMISE_SECRET_KEY is not configured")
 
-    expected_secret = getattr(settings, "OMISE_WEBHOOK_SECRET", "") or ""
-    if expected_secret and not hmac.compare_digest(secret or "", expected_secret):
-        raise ForbiddenException("Invalid Omise webhook secret")
 
     event = await request.json()
     event_key = event.get("key")
@@ -668,5 +688,3 @@ async def get_payment_by_order(
         await db.commit()
         await db.refresh(payment)
     return {"success": True, "data": _payment_dict(payment)}
-
-
