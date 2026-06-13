@@ -23,10 +23,12 @@ async def get_wishlist(current_user: CurrentActiveUser, db: DBSession):
         "data": [
             {
                 "product_id": str(i.product_id),
+                "product_slug": i.product.slug,
                 "product_name": i.product.name,
                 "base_price": str(i.product.base_price),
                 "sale_price": str(i.product.sale_price) if i.product.sale_price else None,
                 "primary_image": next((img.url for img in i.product.images if img.is_primary), None),
+                "stock_quantity": i.product.stock_quantity,
                 "status": i.product.status.value,
                 "added_at": i.created_at.isoformat(),
             }

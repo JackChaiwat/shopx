@@ -157,13 +157,14 @@ export function useUnreadCount() {
 
 // ── Wishlist ─────────────────────────────────────────────
 
-export function useWishlist() {
+export function useWishlist(enabled = true) {
   return useQuery({
     queryKey: ["wishlist"],
     queryFn: async () => {
       const res = await api.get("/wishlist");
       return res.data.data;
     },
+    enabled,
   });
 }
 
